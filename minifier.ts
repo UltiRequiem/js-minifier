@@ -34,6 +34,7 @@ export class Minifier {
    */
   public static minify(js: string, options: MinifierOptions = {}): string {
     const jshrink = new Minifier();
+    
     try {
       js = jshrink.lock(js);
       js = jshrink.minifyToString(js, options).trimStart();
@@ -113,11 +114,12 @@ export class Minifier {
                 this.echo(this.a);
                 this.saveString();
                 break;
-              }
+              } else {
                 if (Minifier.isAlphaNumeric(this.a)) {
                   this.echo(this.a);
                   this.saveString();
                 }
+              }
               break;
 
             case ' ':
@@ -301,6 +303,8 @@ export class Minifier {
 
         const endPoint = (this.index - 1) - startIndex;
         this.echo(this.input.substring(startIndex, startIndex + endPoint));
+        
+        // Fix: Don't add extra space after preserved comments
         this.c = char;
         return;
       }
@@ -342,8 +346,9 @@ export class Minifier {
     while ((this.a = this.getChar()) !== false) {
       switch (this.a) {
         case stringType:
-          // String is finished
+          // String is finished - echo the closing quote and return immediately
           this.echo(this.a);
+          this.a = this.getChar(); // Move to next character
           return;
 
         case '\n':
@@ -445,14 +450,23 @@ export class Minifier {
    */
   private lock(js: string): string {
     const lock = `"LOCK---${Date.now()}${Math.random()}"`;
-    const matches = js.match(/([+-])(\s+)([+-])/);
+    const matches = js.match(/([+-])(\s+)([+-])/g);
     
     if (!matches) {
       return js;
     }
 
-    this.locks[lock] = matches[2];
-    return js.replace(/([+-])\s+([+-])/g, `$1${lock}$2`);
+    // Process all matches
+    for (const match of matches) {
+      const parts = match.match(/([+-])(\s+)([+-])/);
+      if (parts) {
+        const lockKey = `"LOCK---${Date.now()}${Math.random()}"`;
+        this.locks[lockKey] = parts[2];
+        js = js.replace(match, `${parts[1]}${lockKey}${parts[3]}`);
+      }
+    }
+
+    return js;
   }
 
   /**
