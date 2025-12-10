@@ -114,12 +114,11 @@ export class Minifier {
                 this.echo(this.a);
                 this.saveString();
                 break;
-              } else {
+              }
                 if (Minifier.isAlphaNumeric(this.a)) {
                   this.echo(this.a);
                   this.saveString();
                 }
-              }
               break;
 
             case ' ':
