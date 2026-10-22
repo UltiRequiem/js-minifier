@@ -1,2 +1,4 @@
 *.php
 node_modulesdist
+
+dist

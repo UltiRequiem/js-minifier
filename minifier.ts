@@ -73,7 +73,11 @@ export class Minifier {
   /**
    * Output a character and update lastChar
    */
-  private echo(char: string): void {
+  private echo(char: string | false): void {
+    if (char === false) {
+      return;
+    }
+
     this.output += char;
     this.lastChar = char[char.length - 1];
   }
@@ -100,7 +104,8 @@ export class Minifier {
 
         // Treat newline like space
         case ' ':
-          if (Minifier.isAlphaNumeric(this.b)) {
+          // no space after a preserved /*! */ or /*@ */ comment
+          if (Minifier.isAlphaNumeric(this.b) && !this.output.endsWith('*/')) {
             this.echo(this.a);
           }
           this.saveString();
@@ -335,7 +340,7 @@ export class Minifier {
     const startpos = this.index;
     this.a = this.b;
 
-    if (!Minifier.stringDelimiters.has(this.a)) {
+    if (this.a === false || !Minifier.stringDelimiters.has(this.a)) {
       return;
     }
 
@@ -425,7 +430,7 @@ export class Minifier {
    */
   private static isAlphaNumeric(char: string | false): boolean {
     if (!char) return false;
-    return /^[\w$\p{L}]$/u.test(char) || char === '/';
+    return /^[\w$\p{L}]$/u.test(char);
   }
 
   /**
